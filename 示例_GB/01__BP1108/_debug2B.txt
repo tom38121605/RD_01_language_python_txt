@@ -1,0 +1,67 @@
+
+
+
+
+import  ctypes
+dir1 = “d:\\bp1108\\iic2usb.dll"
+libtest = ctypes.CDLL(dir1)
+
+UsbIndex=0
+IONum=0
+IODir=1
+libtest.IOSetAndRead(IONum,IODir,0,UsbIndex)
+
+
+Is_True = libtest.ConfigSPIParam(3,SPI_MSB,SPI_SubMode_3,UsbIndex)
+Is_True =libtest.ConfigIICParam(IIC_Rate_400K,10000,0)
+
+libtest.IOSetAndRead(0,1,0,UsbIndex)
+
+
+def I2C_Write_v2(static_addr,*data):
+    debug("********** I2C write")
+    temp=[]
+    for datum in data:
+        temp.append(datum)
+    SendBuffer=bytes(temp)
+    Result = Is_Send = libtest.IICDirectSend(0,static_addr,SendBuffer,len(SendBuffer),0);
+    debug("I2C Write ",''.join('{:02x} '.format(a) for a in SendBuffer))
+
+def I2C_Read_v2 (static_addr,length):
+    Buffer=bytes(length)
+    Result = libtest.IICDirectRead(0,static_addr,Buffer,length,0);
+    debug("I2C Read ",''.join('{:02x} '.format(a) for a in Buffer))
+    return Buffer
+
+
+
+I2C_Write_v2(I2C_Addr,0x01,0x01)    # Soft RESET
+
+FIFO=I2C_Read_v2(I2C_Addr,Sample_count*3)
+
+Is_Open = libtest.OpenUsb(ctypes.c_uint(0))
+if (Is_Open<0):
+    print("usb fail")
+    libtest.CloseUsb(ctypes.c_uint(0))
+    exit(1)
+    debug("usb open")
+else:
+    debug("usb open")
+
+
+
+libtest.CloseUsb(ctypes.c_uint(0))
+
+
+
+
+==================
+
+python中，下面Sample_count的计算后面的[(command>>6)==0b11]是什么意思  
+command=0b1000_0001 
+Sample_count=[ 3,    2]       [(command>>6)==0b11]
+
+Sample_count=[command  *2]    [(command>>6)==0b11]
+
+python中，下面Sample_count的计算后面的[ ]是什么意思  
+Sample_count=[((command &0x1) +((command >>1 ) & 0x1)*3),(((command &0x1) +((command >>1 ) & 0x1)*3)*2)] [(command>>6)==0b11]
