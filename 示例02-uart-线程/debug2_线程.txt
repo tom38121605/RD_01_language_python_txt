@@ -1,0 +1,36 @@
+﻿
+
+1. 先定义一个函数receive_and_send_data
+
+def receive_and_send_data(ser):    #定义一个线程函数
+    try:
+        while True:
+
+            if ser.in_waiting > 0:
+
+                received_data = ser.read(ser.in_waiting)
+                print(f"received data: {received_data}")
+
+                ser.write(received_data)
+
+    except serial.SerialException as e:
+        ......
+
+
+
+2.  然后把该函数，关联为uart的线程中断入口
+
+try:                    #这里的try相当于main函数
+
+    ser = serial.Serial('COM17', 1000000, timeout=1)     #设置线程函数中断的参数
+    print(f"Successfully connected: {ser.name}")
+
+    receive_thread = threading.Thread(target=receive_and_send_data, args=(ser,))       #关联函数receive_and_send_data为线程中断入口
+    receive_thread.daemon = True
+    receive_thread.start()
+
+    while True:
+        pass
+
+except serial.SerialException as e:
+    ......
